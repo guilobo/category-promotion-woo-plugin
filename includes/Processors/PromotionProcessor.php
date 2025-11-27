@@ -34,7 +34,12 @@ class PromotionProcessor {
      */
     public function start_promotion() {
         if ( ! current_user_can( 'manage_woocommerce' ) ) {
-            wp_send_json_error( array( 'message' => __( 'Permission denied.', 'indoortech-category-promotions' ) ), 403 );
+            $this->send_error(
+                __( 'Permission denied.', 'indoortech-category-promotions' ),
+                'itcp_permission_denied',
+                '',
+                403
+            );
         }
 
         check_ajax_referer( self::NONCE_ACTION, 'nonce' );
@@ -46,21 +51,42 @@ class PromotionProcessor {
         $action     = isset( $_POST['action_type'] ) ? sanitize_key( wp_unslash( $_POST['action_type'] ) ) : 'apply';
 
         if ( ! in_array( $action, array( 'apply', 'remove' ), true ) ) {
-            wp_send_json_error( array( 'message' => __( 'Invalid parameters.', 'indoortech-category-promotions' ) ), 400 );
+            $this->send_error(
+                __( 'Invalid parameters.', 'indoortech-category-promotions' ),
+                'itcp_invalid_action',
+                sprintf( 'Received action: %s', $action )
+            );
         }
 
         if ( empty( $categories ) ) {
-            wp_send_json_error( array( 'message' => __( 'Invalid parameters.', 'indoortech-category-promotions' ) ), 400 );
+            $this->send_error(
+                __( 'Invalid parameters.', 'indoortech-category-promotions' ),
+                'itcp_missing_categories',
+                'No categories provided in request.'
+            );
         }
 
         if ( 'apply' === $action && ( $discount <= 0 || $discount >= 100 || empty( $start_date ) || empty( $end_date ) ) ) {
-            wp_send_json_error( array( 'message' => __( 'Invalid parameters.', 'indoortech-category-promotions' ) ), 400 );
+            $this->send_error(
+                __( 'Invalid parameters.', 'indoortech-category-promotions' ),
+                'itcp_invalid_discount_or_dates',
+                sprintf(
+                    'Discount: %s | Start: %s | End: %s',
+                    $discount,
+                    $start_date,
+                    $end_date
+                )
+            );
         }
 
         $product_ids = $this->get_products_by_categories( $categories );
 
         if ( empty( $product_ids ) ) {
-            wp_send_json_error( array( 'message' => __( 'No products found for the selected categories.', 'indoortech-category-promotions' ) ), 400 );
+            $this->send_error(
+                __( 'No products found for the selected categories.', 'indoortech-category-promotions' ),
+                'itcp_no_products_for_categories',
+                sprintf( 'Categories requested: %s', implode( ',', $categories ) )
+            );
         }
 
         $queue = array(
@@ -89,7 +115,12 @@ class PromotionProcessor {
      */
     public function process_batch() {
         if ( ! current_user_can( 'manage_woocommerce' ) ) {
-            wp_send_json_error( array( 'message' => __( 'Permission denied.', 'indoortech-category-promotions' ) ), 403 );
+            $this->send_error(
+                __( 'Permission denied.', 'indoortech-category-promotions' ),
+                'itcp_permission_denied',
+                '',
+                403
+            );
         }
 
         check_ajax_referer( self::NONCE_ACTION, 'nonce' );
@@ -97,7 +128,11 @@ class PromotionProcessor {
         $queue = get_transient( $this->get_queue_key() );
 
         if ( empty( $queue ) || ! isset( $queue['product_ids'] ) ) {
-            wp_send_json_error( array( 'message' => __( 'No queue found. Please restart the process.', 'indoortech-category-promotions' ) ), 400 );
+            $this->send_error(
+                __( 'No queue found. Please restart the process.', 'indoortech-category-promotions' ),
+                'itcp_missing_queue',
+                'Queue transient is empty or missing product_ids.'
+            );
         }
 
         $service     = new PromotionService();
@@ -116,14 +151,10 @@ class PromotionProcessor {
         } catch ( \Throwable $exception ) {
             $this->log_exception( $exception );
 
-            $message = __( 'An unexpected error occurred while processing products. Please try again.', 'indoortech-category-promotions' );
-            $debug   = ( defined( 'WP_DEBUG' ) && WP_DEBUG ) ? $exception->getMessage() : '';
-
-            wp_send_json_error(
-                array(
-                    'message' => $message,
-                    'debug'   => $debug,
-                ),
+            $this->send_error(
+                __( 'An unexpected error occurred while processing products. Please try again.', 'indoortech-category-promotions' ),
+                'itcp_batch_exception',
+                $this->format_exception_debug( $exception ),
                 500
             );
         }
@@ -203,5 +234,58 @@ class PromotionProcessor {
         } else {
             error_log( $exception->getMessage() );
         }
+    }
+
+    /**
+     * Send a standardized JSON error with optional debug details.
+     *
+     * @param string $message Error message.
+     * @param string $code    Internal code to append to the message for clarity.
+     * @param string $debug   Debug details to return when WP_DEBUG is enabled.
+     * @param int    $status  HTTP status code.
+     */
+    private function send_error( $message, $code = '', $debug = '', $status = 400 ) {
+        $formatted_message = $code ? sprintf( '%s (%s)', $message, $code ) : $message;
+
+        wp_send_json_error(
+            array(
+                'message' => $formatted_message,
+                'debug'   => $this->maybe_include_debug( $debug ),
+            ),
+            $status
+        );
+    }
+
+    /**
+     * Decide whether to return debug information.
+     *
+     * @param string $debug Debug string.
+     *
+     * @return string
+     */
+    private function maybe_include_debug( $debug ) {
+        return ( defined( 'WP_DEBUG' ) && WP_DEBUG ) ? (string) $debug : '';
+    }
+
+    /**
+     * Build detailed exception output for debugging when WP_DEBUG is enabled.
+     *
+     * @param \Throwable $exception Exception instance.
+     *
+     * @return string
+     */
+    private function format_exception_debug( \Throwable $exception ) {
+        $details = array(
+            sprintf( 'Type: %s', get_class( $exception ) ),
+            sprintf( 'Message: %s', $exception->getMessage() ),
+            sprintf( 'File: %s:%d', $exception->getFile(), $exception->getLine() ),
+        );
+
+        $trace = $exception->getTraceAsString();
+        if ( $trace ) {
+            $details[] = 'Trace: ' . $trace;
+        }
+
+        return implode( "\n", $details );
     }
 }

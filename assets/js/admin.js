@@ -98,7 +98,11 @@
         }).done(function(response){
             if(!response.success){
                 setLoading(false);
-                showMessage('error', response.data && response.data.message ? response.data.message : settings.i18n.error);
+                showMessage(
+                    'error',
+                    response.data && response.data.message ? response.data.message : settings.i18n.error,
+                    response.data && response.data.debug ? response.data.debug : ''
+                );
                 return;
             }
             updateProgress(0, response.data.total, 0);
