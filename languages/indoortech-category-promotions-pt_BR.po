@@ -100,3 +100,39 @@ msgstr "Todos os produtos foram atualizados."
 #: includes/Processors/PromotionProcessor.php:117
 msgid "Processing next batch..."
 msgstr "Processando o próximo lote..."
+
+#: includes/Processors/PromotionProcessor.php:38 includes/Processors/PromotionProcessor.php:88
+msgid "Current user cannot manage WooCommerce."
+msgstr "O usuário atual não pode gerenciar o WooCommerce."
+
+#: includes/Processors/PromotionProcessor.php:50
+msgid "Action received: %s"
+msgstr "Ação recebida: %s"
+
+#: includes/Processors/PromotionProcessor.php:60
+msgid "No categories provided in request."
+msgstr "Nenhuma categoria foi informada na solicitação."
+
+#: includes/Processors/PromotionProcessor.php:64
+msgid "Discount: %s | Start: %s | End: %s"
+msgstr "Desconto: %s | Início: %s | Fim: %s"
+
+#: includes/Processors/PromotionProcessor.php:74
+msgid "Categories requested: %s"
+msgstr "Categorias solicitadas: %s"
+
+#: includes/Processors/PromotionProcessor.php:97
+msgid "Queue transient is empty or missing product_ids."
+msgstr "O transitório da fila está vazio ou sem product_ids."
+
+#: includes/Processors/PromotionProcessor.php:113
+msgid "Action: %s | Last product: %s | Discount: %s | Start: %s | End: %s | Remaining queue: %d"
+msgstr "Ação: %s | Último produto: %s | Desconto: %s | Início: %s | Fim: %s | Fila restante: %d"
+
+#: includes/Processors/PromotionProcessor.php:115
+msgid "none"
+msgstr "nenhum"
+
+#: includes/Processors/PromotionProcessor.php:116 includes/Processors/PromotionProcessor.php:117
+msgid "n/a"
+msgstr "n/d"

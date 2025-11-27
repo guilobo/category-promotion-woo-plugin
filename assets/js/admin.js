@@ -30,9 +30,13 @@
         return $('<div>').text(value).html();
     }
 
-    function showMessage(type, text, debug){
+    function showMessage(type, text, debug, context){
         const cssClass = type === 'success' ? 'notice notice-success' : 'notice notice-error';
         let content = '<div class="' + cssClass + '"><p>' + escapeHtml(text) + '</p>';
+
+        if(context){
+            content += '<p class="description">' + escapeHtml(context) + '</p>';
+        }
 
         if(debug){
             content += '<pre class="itcp-debug">' + escapeHtml(debug) + '</pre>';
@@ -63,7 +67,12 @@
         }).done(function(response){
             if(!response.success){
                 setLoading(false);
-                showMessage('error', response.data && response.data.message ? response.data.message : settings.i18n.error, response.data && response.data.debug ? response.data.debug : '');
+                showMessage(
+                    'error',
+                    response.data && response.data.message ? response.data.message : settings.i18n.error,
+                    response.data && response.data.debug ? response.data.debug : '',
+                    response.data && response.data.context ? response.data.context : ''
+                );
                 return;
             }
 
@@ -77,9 +86,15 @@
             } else {
                 setTimeout(processBatch, 500);
             }
-        }).fail(function(){
+        }).fail(function(xhr){
             setLoading(false);
-            showMessage('error', settings.i18n.error);
+            const response = xhr && xhr.responseJSON && xhr.responseJSON.data ? xhr.responseJSON.data : {};
+            showMessage(
+                'error',
+                response.message || settings.i18n.error,
+                response.debug || '',
+                response.context || ''
+            );
         });
     }
 
@@ -101,15 +116,22 @@
                 showMessage(
                     'error',
                     response.data && response.data.message ? response.data.message : settings.i18n.error,
-                    response.data && response.data.debug ? response.data.debug : ''
+                    response.data && response.data.debug ? response.data.debug : '',
+                    response.data && response.data.context ? response.data.context : ''
                 );
                 return;
             }
             updateProgress(0, response.data.total, 0);
             processBatch();
-        }).fail(function(){
+        }).fail(function(xhr){
             setLoading(false);
-            showMessage('error', settings.i18n.error);
+            const response = xhr && xhr.responseJSON && xhr.responseJSON.data ? xhr.responseJSON.data : {};
+            showMessage(
+                'error',
+                response.message || settings.i18n.error,
+                response.debug || '',
+                response.context || ''
+            );
         });
     });
 
