@@ -75,7 +75,23 @@ class PromotionService {
             return null;
         }
 
-        $datetime = wc_string_to_datetime( $date_string );
+        $datetime = null;
+
+        if ( function_exists( 'wc_string_to_datetime' ) ) {
+            $datetime = wc_string_to_datetime( $date_string );
+        } else {
+            $timezone = function_exists( 'wc_timezone' ) ? wc_timezone() : wp_timezone();
+
+            try {
+                if ( class_exists( '\\WC_DateTime' ) ) {
+                    $datetime = new \WC_DateTime( $date_string, $timezone );
+                } else {
+                    $datetime = new \DateTime( $date_string, $timezone );
+                }
+            } catch ( \Exception $e ) {
+                return null;
+            }
+        }
 
         if ( is_wp_error( $datetime ) || null === $datetime ) {
             return null;
