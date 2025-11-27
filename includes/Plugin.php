@@ -65,10 +65,14 @@ class Plugin {
             $po_file = $languages_path . sprintf( '%1$s-%2$s.po', $domain, $locale );
         }
 
-        if ( file_exists( $po_file ) && class_exists( '\Translations' ) ) {
-            $translations = \Translations::from_po_file( $po_file );
+        if ( file_exists( $po_file ) ) {
+            if ( ! class_exists( '\PO' ) ) {
+                require_once ABSPATH . WPINC . '/pomo/po.php';
+            }
 
-            if ( $translations ) {
+            $translations = new \PO();
+
+            if ( $translations->import_from_file( $po_file ) ) {
                 $GLOBALS['l10n'][ $domain ] = $translations;
                 return;
             }
