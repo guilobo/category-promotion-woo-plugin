@@ -6,6 +6,10 @@
     const progressText = progressBar.find('.itcp-progress-text');
     const statusText = $('#itcp-status');
     const messageBox = $('#itcp-message');
+    const actionRadios = $('input[name="itcp-action"]');
+    const discountInput = $('#itcp-discount');
+    const startInput = $('#itcp-start-date');
+    const endInput = $('#itcp-end-date');
 
     function setLoading(isLoading){
         form.find('input, select, button').prop('disabled', isLoading);
@@ -22,9 +26,38 @@
         statusText.text(processed + ' / ' + total + '');
     }
 
-    function showMessage(type, text){
+    function escapeHtml(value){
+        return $('<div>').text(value).html();
+    }
+
+    function showMessage(type, text, debug, context){
         const cssClass = type === 'success' ? 'notice notice-success' : 'notice notice-error';
-        messageBox.html('<div class="' + cssClass + '"><p>' + text + '</p></div>');
+        let content = '<div class="' + cssClass + '"><p>' + escapeHtml(text) + '</p>';
+
+        if(context){
+            content += '<p class="description">' + escapeHtml(context) + '</p>';
+        }
+
+        if(debug){
+            content += '<pre class="itcp-debug">' + escapeHtml(debug) + '</pre>';
+        }
+
+        content += '</div>';
+        messageBox.html(content);
+    }
+
+    function toggleActionFields(action){
+        const isRemove = action === 'remove';
+
+        discountInput.prop('disabled', isRemove).prop('required', !isRemove);
+        startInput.prop('disabled', isRemove).prop('required', !isRemove);
+        endInput.prop('disabled', isRemove).prop('required', !isRemove);
+
+        if(isRemove){
+            discountInput.val('');
+            startInput.val('');
+            endInput.val('');
+        }
     }
 
     function processBatch(){
@@ -34,7 +67,12 @@
         }).done(function(response){
             if(!response.success){
                 setLoading(false);
-                showMessage('error', response.data && response.data.message ? response.data.message : settings.i18n.error);
+                showMessage(
+                    'error',
+                    response.data && response.data.message ? response.data.message : settings.i18n.error,
+                    response.data && response.data.debug ? response.data.debug : '',
+                    response.data && response.data.context ? response.data.context : ''
+                );
                 return;
             }
 
@@ -48,9 +86,15 @@
             } else {
                 setTimeout(processBatch, 500);
             }
-        }).fail(function(){
+        }).fail(function(xhr){
             setLoading(false);
-            showMessage('error', settings.i18n.error);
+            const response = xhr && xhr.responseJSON && xhr.responseJSON.data ? xhr.responseJSON.data : {};
+            showMessage(
+                'error',
+                response.message || settings.i18n.error,
+                response.debug || '',
+                response.context || ''
+            );
         });
     }
 
@@ -64,18 +108,36 @@
             categories: $('#itcp-categories').val(),
             discount: $('#itcp-discount').val(),
             start_date: $('#itcp-start-date').val(),
-            end_date: $('#itcp-end-date').val()
+            end_date: $('#itcp-end-date').val(),
+            action_type: $('input[name="itcp-action"]:checked').val()
         }).done(function(response){
             if(!response.success){
                 setLoading(false);
-                showMessage('error', response.data && response.data.message ? response.data.message : settings.i18n.error);
+                showMessage(
+                    'error',
+                    response.data && response.data.message ? response.data.message : settings.i18n.error,
+                    response.data && response.data.debug ? response.data.debug : '',
+                    response.data && response.data.context ? response.data.context : ''
+                );
                 return;
             }
             updateProgress(0, response.data.total, 0);
             processBatch();
-        }).fail(function(){
+        }).fail(function(xhr){
             setLoading(false);
-            showMessage('error', settings.i18n.error);
+            const response = xhr && xhr.responseJSON && xhr.responseJSON.data ? xhr.responseJSON.data : {};
+            showMessage(
+                'error',
+                response.message || settings.i18n.error,
+                response.debug || '',
+                response.context || ''
+            );
         });
     });
+
+    actionRadios.on('change', function(){
+        toggleActionFields($(this).val());
+    });
+
+    toggleActionFields(actionRadios.filter(':checked').val());
 })(jQuery);

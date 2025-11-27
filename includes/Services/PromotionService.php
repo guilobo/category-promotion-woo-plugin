@@ -45,6 +45,24 @@ class PromotionService {
     }
 
     /**
+     * Remove promotion from a product.
+     *
+     * @param int $product_id Product ID.
+     */
+    public function remove_promotion( $product_id ) {
+        $product = wc_get_product( $product_id );
+
+        if ( ! $product ) {
+            return;
+        }
+
+        $product->set_sale_price( '' );
+        $product->set_date_on_sale_from( null );
+        $product->set_date_on_sale_to( null );
+        $product->save();
+    }
+
+    /**
      * Parse date string to timestamp.
      *
      * @param string $date_string Date string.
@@ -57,16 +75,44 @@ class PromotionService {
             return null;
         }
 
-        $time = strtotime( $date_string );
+        $datetime = null;
 
-        if ( false === $time ) {
+        if ( function_exists( 'wc_string_to_datetime' ) ) {
+            $datetime = wc_string_to_datetime( $date_string );
+        } else {
+            $timezone = function_exists( 'wc_timezone' ) ? wc_timezone() : wp_timezone();
+
+            try {
+                if ( class_exists( '\\WC_DateTime' ) ) {
+                    $datetime = new \WC_DateTime( $date_string, $timezone );
+                } else {
+                    $datetime = new \DateTime( $date_string, $timezone );
+                }
+            } catch ( \Exception $e ) {
+                return null;
+            }
+        }
+
+        if ( is_wp_error( $datetime ) || null === $datetime ) {
             return null;
         }
 
-        if ( $end_of_day ) {
-            $time = strtotime( '23:59:59', $time );
+        $set_time_method = null;
+
+        if ( method_exists( $datetime, 'set_time' ) ) {
+            $set_time_method = 'set_time';
+        } elseif ( method_exists( $datetime, 'setTime' ) ) {
+            $set_time_method = 'setTime';
         }
 
-        return $time;
+        if ( $set_time_method ) {
+            if ( $end_of_day ) {
+                $datetime->$set_time_method( 23, 59, 59 );
+            } else {
+                $datetime->$set_time_method( 0, 0, 0 );
+            }
+        }
+
+        return $datetime;
     }
 }

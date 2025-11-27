@@ -34,7 +34,13 @@ class PromotionProcessor {
      */
     public function start_promotion() {
         if ( ! current_user_can( 'manage_woocommerce' ) ) {
-            wp_send_json_error( array( 'message' => __( 'Permission denied.', 'indoortech-category-promotions' ) ), 403 );
+            $this->send_error(
+                __( 'Permission denied.', 'indoortech-category-promotions' ),
+                'itcp_permission_denied',
+                '',
+                403,
+                __( 'Current user cannot manage WooCommerce.', 'indoortech-category-promotions' )
+            );
         }
 
         check_ajax_referer( self::NONCE_ACTION, 'nonce' );
@@ -43,15 +49,61 @@ class PromotionProcessor {
         $discount   = isset( $_POST['discount'] ) ? floatval( wp_unslash( $_POST['discount'] ) ) : 0;
         $start_date = isset( $_POST['start_date'] ) ? sanitize_text_field( wp_unslash( $_POST['start_date'] ) ) : '';
         $end_date   = isset( $_POST['end_date'] ) ? sanitize_text_field( wp_unslash( $_POST['end_date'] ) ) : '';
+        $action     = isset( $_POST['action_type'] ) ? sanitize_key( wp_unslash( $_POST['action_type'] ) ) : 'apply';
 
-        if ( empty( $categories ) || $discount <= 0 || $discount >= 100 || empty( $start_date ) || empty( $end_date ) ) {
-            wp_send_json_error( array( 'message' => __( 'Invalid parameters.', 'indoortech-category-promotions' ) ), 400 );
+        if ( ! in_array( $action, array( 'apply', 'remove' ), true ) ) {
+            $context = sprintf( __( 'Action received: %s', 'indoortech-category-promotions' ), $action );
+
+            $this->send_error(
+                __( 'Invalid parameters.', 'indoortech-category-promotions' ),
+                'itcp_invalid_action',
+                $context,
+                400,
+                $context
+            );
+        }
+
+        if ( empty( $categories ) ) {
+            $context = __( 'No categories provided in request.', 'indoortech-category-promotions' );
+
+            $this->send_error(
+                __( 'Invalid parameters.', 'indoortech-category-promotions' ),
+                'itcp_missing_categories',
+                $context,
+                400,
+                $context
+            );
+        }
+
+        if ( 'apply' === $action && ( $discount <= 0 || $discount >= 100 || empty( $start_date ) || empty( $end_date ) ) ) {
+            $context = sprintf(
+                __( 'Discount: %s | Start: %s | End: %s', 'indoortech-category-promotions' ),
+                $discount,
+                $start_date,
+                $end_date
+            );
+
+            $this->send_error(
+                __( 'Invalid parameters.', 'indoortech-category-promotions' ),
+                'itcp_invalid_discount_or_dates',
+                $context,
+                400,
+                $context
+            );
         }
 
         $product_ids = $this->get_products_by_categories( $categories );
 
         if ( empty( $product_ids ) ) {
-            wp_send_json_error( array( 'message' => __( 'No products found for the selected categories.', 'indoortech-category-promotions' ) ), 400 );
+            $context = sprintf( __( 'Categories requested: %s', 'indoortech-category-promotions' ), implode( ',', $categories ) );
+
+            $this->send_error(
+                __( 'No products found for the selected categories.', 'indoortech-category-promotions' ),
+                'itcp_no_products_for_categories',
+                $context,
+                404,
+                $context
+            );
         }
 
         $queue = array(
@@ -59,6 +111,7 @@ class PromotionProcessor {
             'discount'    => $discount,
             'start_date'  => $start_date,
             'end_date'    => $end_date,
+            'action'      => $action,
             'processed'   => 0,
             'total'       => count( $product_ids ),
         );
@@ -79,7 +132,13 @@ class PromotionProcessor {
      */
     public function process_batch() {
         if ( ! current_user_can( 'manage_woocommerce' ) ) {
-            wp_send_json_error( array( 'message' => __( 'Permission denied.', 'indoortech-category-promotions' ) ), 403 );
+            $this->send_error(
+                __( 'Permission denied.', 'indoortech-category-promotions' ),
+                'itcp_permission_denied',
+                '',
+                403,
+                __( 'Current user cannot manage WooCommerce.', 'indoortech-category-promotions' )
+            );
         }
 
         check_ajax_referer( self::NONCE_ACTION, 'nonce' );
@@ -87,15 +146,53 @@ class PromotionProcessor {
         $queue = get_transient( $this->get_queue_key() );
 
         if ( empty( $queue ) || ! isset( $queue['product_ids'] ) ) {
-            wp_send_json_error( array( 'message' => __( 'No queue found. Please restart the process.', 'indoortech-category-promotions' ) ), 400 );
+            $context = __( 'Queue transient is empty or missing product_ids.', 'indoortech-category-promotions' );
+
+            $this->send_error(
+                __( 'No queue found. Please restart the process.', 'indoortech-category-promotions' ),
+                'itcp_missing_queue',
+                $context,
+                400,
+                $context
+            );
         }
 
         $service     = new PromotionService();
         $product_ids = array_splice( $queue['product_ids'], 0, self::BATCH_SIZE );
+        $action      = isset( $queue['action'] ) ? $queue['action'] : 'apply';
+        $last_product_id = null;
 
-        foreach ( $product_ids as $product_id ) {
-            $service->apply_promotion( $product_id, $queue['discount'], $queue['start_date'], $queue['end_date'] );
-            $queue['processed']++;
+        try {
+            foreach ( $product_ids as $product_id ) {
+                $last_product_id = $product_id;
+
+                if ( 'remove' === $action ) {
+                    $service->remove_promotion( $product_id );
+                } else {
+                    $service->apply_promotion( $product_id, $queue['discount'], $queue['start_date'], $queue['end_date'] );
+                }
+                $queue['processed']++;
+            }
+        } catch ( \Throwable $exception ) {
+            $this->log_exception( $exception );
+
+            $context = sprintf(
+                __( 'Action: %s | Last product: %s | Discount: %s | Start: %s | End: %s | Remaining queue: %d', 'indoortech-category-promotions' ),
+                $action,
+                $last_product_id ? $last_product_id : __( 'none', 'indoortech-category-promotions' ),
+                isset( $queue['discount'] ) ? $queue['discount'] : __( 'n/a', 'indoortech-category-promotions' ),
+                isset( $queue['start_date'] ) ? $queue['start_date'] : __( 'n/a', 'indoortech-category-promotions' ),
+                isset( $queue['end_date'] ) ? $queue['end_date'] : __( 'n/a', 'indoortech-category-promotions' ),
+                isset( $queue['product_ids'] ) ? count( $queue['product_ids'] ) : 0
+            );
+
+            $this->send_error(
+                __( 'An unexpected error occurred while processing products. Please try again.', 'indoortech-category-promotions' ),
+                'itcp_batch_exception',
+                $this->format_exception_debug( $exception ),
+                500,
+                $context
+            );
         }
 
         $complete = empty( $queue['product_ids'] );
@@ -154,5 +251,80 @@ class PromotionProcessor {
         $user_id = get_current_user_id();
 
         return self::TRANSIENT_KEY . $user_id;
+    }
+
+    /**
+     * Log exceptions to WooCommerce logger when available.
+     *
+     * @param \Throwable $exception Exception instance.
+     */
+    private function log_exception( \Throwable $exception ) {
+        if ( function_exists( 'wc_get_logger' ) ) {
+            $logger = wc_get_logger();
+            $logger->error(
+                $exception->getMessage(),
+                array(
+                    'source' => 'indoortech-category-promotions',
+                )
+            );
+        } else {
+            error_log( $exception->getMessage() );
+        }
+    }
+
+    /**
+     * Send a standardized JSON error with optional debug details.
+     *
+     * @param string $message Error message.
+     * @param string $code    Internal code to append to the message for clarity.
+     * @param string $debug   Debug details to return when WP_DEBUG is enabled.
+     * @param int    $status  HTTP status code.
+     * @param string $context Additional public context always returned for easier debugging.
+     */
+    private function send_error( $message, $code = '', $debug = '', $status = 400, $context = '' ) {
+        $formatted_message = $code ? sprintf( '%s (%s)', $message, $code ) : $message;
+        $public_context    = $context ? (string) $context : '';
+
+        wp_send_json_error(
+            array(
+                'message' => $formatted_message,
+                'context' => $public_context,
+                'debug'   => $this->maybe_include_debug( $debug ?: $public_context ),
+            ),
+            $status
+        );
+    }
+
+    /**
+     * Decide whether to return debug information.
+     *
+     * @param string $debug Debug string.
+     *
+     * @return string
+     */
+    private function maybe_include_debug( $debug ) {
+        return ( defined( 'WP_DEBUG' ) && WP_DEBUG ) ? (string) $debug : '';
+    }
+
+    /**
+     * Build detailed exception output for debugging when WP_DEBUG is enabled.
+     *
+     * @param \Throwable $exception Exception instance.
+     *
+     * @return string
+     */
+    private function format_exception_debug( \Throwable $exception ) {
+        $details = array(
+            sprintf( 'Type: %s', get_class( $exception ) ),
+            sprintf( 'Message: %s', $exception->getMessage() ),
+            sprintf( 'File: %s:%d', $exception->getFile(), $exception->getLine() ),
+        );
+
+        $trace = $exception->getTraceAsString();
+        if ( $trace ) {
+            $details[] = 'Trace: ' . $trace;
+        }
+
+        return implode( "\n", $details );
     }
 }

@@ -1,0 +1,138 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Indoortech Category Promotions 1.0.0\n"
+"POT-Creation-Date: 2024-01-01 00:00+0000\n"
+"PO-Revision-Date: 2024-01-01 00:00+0000\n"
+"Language: pt_BR\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#: includes/Admin/AdminPage.php:22 includes/Admin/AdminPage.php:23 includes/Admin/AdminPage.php:70
+msgid "Category Promotions"
+msgstr "Promoções por Categoria"
+
+#: includes/Admin/AdminPage.php:39
+msgid "You do not have permission to access this page."
+msgstr "Você não tem permissão para acessar esta página."
+
+#: includes/Admin/AdminPage.php:52
+msgid "Start Date"
+msgstr "Data de início"
+
+#: includes/Admin/AdminPage.php:53
+msgid "End Date"
+msgstr "Data de término"
+
+#: includes/Admin/AdminPage.php:54
+msgid "Discount Percentage"
+msgstr "Percentual de desconto"
+
+#: includes/Admin/AdminPage.php:55
+msgid "Create Promotion"
+msgstr "Criar promoção"
+
+#: includes/Admin/AdminPage.php:56
+msgid "Action"
+msgstr "Ação"
+
+#: includes/Admin/AdminPage.php:57
+msgid "Apply promotion"
+msgstr "Aplicar promoção"
+
+#: includes/Admin/AdminPage.php:58
+msgid "Remove promotions"
+msgstr "Remover promoções"
+
+#: includes/Admin/AdminPage.php:61
+msgid "Processing products, please do not close this window."
+msgstr "Processando produtos, por favor não feche esta janela."
+
+#: includes/Admin/AdminPage.php:62
+msgid "Promotion action completed successfully for all selected products."
+msgstr "Ação de promoção concluída com sucesso para todos os produtos selecionados."
+
+#: includes/Admin/AdminPage.php:63
+msgid "An error occurred while applying the promotion. Please try again."
+msgstr "Ocorreu um erro ao aplicar a promoção. Tente novamente."
+
+#: includes/Admin/AdminPage.php:75
+msgid "Select Categories"
+msgstr "Selecionar categorias"
+
+#: includes/Admin/AdminPage.php:80
+msgid "Choose one or more categories to discount."
+msgstr "Escolha uma ou mais categorias para aplicar o desconto."
+
+#: includes/Plugin.php:66
+msgid "Category Promotions for WooCommerce requires WooCommerce to be installed and active."
+msgstr "Category Promotions for WooCommerce requer o WooCommerce instalado e ativo."
+
+#: includes/Processors/PromotionProcessor.php:37 includes/Processors/PromotionProcessor.php:82
+msgid "Permission denied."
+msgstr "Permissão negada."
+
+#: includes/Processors/PromotionProcessor.php:48 includes/Processors/PromotionProcessor.php:54 includes/Processors/PromotionProcessor.php:92
+msgid "Invalid parameters."
+msgstr "Parâmetros inválidos."
+
+#: includes/Processors/PromotionProcessor.php:54
+msgid "No products found for the selected categories."
+msgstr "Nenhum produto encontrado para as categorias selecionadas."
+
+#: includes/Processors/PromotionProcessor.php:72
+msgid "Promotion initialization complete. Starting batch processing."
+msgstr "Inicialização da promoção concluída. Iniciando processamento em lotes."
+
+#: includes/Processors/PromotionProcessor.php:90
+msgid "No queue found. Please restart the process."
+msgstr "Nenhuma fila encontrada. Por favor, reinicie o processo."
+
+#: includes/Processors/PromotionProcessor.php:106
+msgid "An unexpected error occurred while processing products. Please try again."
+msgstr "Ocorreu um erro inesperado ao processar os produtos. Por favor, tente novamente."
+
+#: includes/Processors/PromotionProcessor.php:117
+msgid "All products have been updated."
+msgstr "Todos os produtos foram atualizados."
+
+#: includes/Processors/PromotionProcessor.php:117
+msgid "Processing next batch..."
+msgstr "Processando o próximo lote..."
+
+#: includes/Processors/PromotionProcessor.php:38 includes/Processors/PromotionProcessor.php:88
+msgid "Current user cannot manage WooCommerce."
+msgstr "O usuário atual não pode gerenciar o WooCommerce."
+
+#: includes/Processors/PromotionProcessor.php:50
+msgid "Action received: %s"
+msgstr "Ação recebida: %s"
+
+#: includes/Processors/PromotionProcessor.php:60
+msgid "No categories provided in request."
+msgstr "Nenhuma categoria foi informada na solicitação."
+
+#: includes/Processors/PromotionProcessor.php:64
+msgid "Discount: %s | Start: %s | End: %s"
+msgstr "Desconto: %s | Início: %s | Fim: %s"
+
+#: includes/Processors/PromotionProcessor.php:74
+msgid "Categories requested: %s"
+msgstr "Categorias solicitadas: %s"
+
+#: includes/Processors/PromotionProcessor.php:97
+msgid "Queue transient is empty or missing product_ids."
+msgstr "O transitório da fila está vazio ou sem product_ids."
+
+#: includes/Processors/PromotionProcessor.php:113
+msgid "Action: %s | Last product: %s | Discount: %s | Start: %s | End: %s | Remaining queue: %d"
+msgstr "Ação: %s | Último produto: %s | Desconto: %s | Início: %s | Fim: %s | Fila restante: %d"
+
+#: includes/Processors/PromotionProcessor.php:115
+msgid "none"
+msgstr "nenhum"
+
+#: includes/Processors/PromotionProcessor.php:116 includes/Processors/PromotionProcessor.php:117
+msgid "n/a"
+msgstr "n/d"
