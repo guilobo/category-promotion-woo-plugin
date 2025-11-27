@@ -104,13 +104,28 @@ class PromotionProcessor {
         $product_ids = array_splice( $queue['product_ids'], 0, self::BATCH_SIZE );
         $action      = isset( $queue['action'] ) ? $queue['action'] : 'apply';
 
-        foreach ( $product_ids as $product_id ) {
-            if ( 'remove' === $action ) {
-                $service->remove_promotion( $product_id );
-            } else {
-                $service->apply_promotion( $product_id, $queue['discount'], $queue['start_date'], $queue['end_date'] );
+        try {
+            foreach ( $product_ids as $product_id ) {
+                if ( 'remove' === $action ) {
+                    $service->remove_promotion( $product_id );
+                } else {
+                    $service->apply_promotion( $product_id, $queue['discount'], $queue['start_date'], $queue['end_date'] );
+                }
+                $queue['processed']++;
             }
-            $queue['processed']++;
+        } catch ( \Throwable $exception ) {
+            $this->log_exception( $exception );
+
+            $message = __( 'An unexpected error occurred while processing products. Please try again.', 'indoortech-category-promotions' );
+            $debug   = ( defined( 'WP_DEBUG' ) && WP_DEBUG ) ? $exception->getMessage() : '';
+
+            wp_send_json_error(
+                array(
+                    'message' => $message,
+                    'debug'   => $debug,
+                ),
+                500
+            );
         }
 
         $complete = empty( $queue['product_ids'] );
@@ -169,5 +184,24 @@ class PromotionProcessor {
         $user_id = get_current_user_id();
 
         return self::TRANSIENT_KEY . $user_id;
+    }
+
+    /**
+     * Log exceptions to WooCommerce logger when available.
+     *
+     * @param \Throwable $exception Exception instance.
+     */
+    private function log_exception( \Throwable $exception ) {
+        if ( function_exists( 'wc_get_logger' ) ) {
+            $logger = wc_get_logger();
+            $logger->error(
+                $exception->getMessage(),
+                array(
+                    'source' => 'indoortech-category-promotions',
+                )
+            );
+        } else {
+            error_log( $exception->getMessage() );
+        }
     }
 }

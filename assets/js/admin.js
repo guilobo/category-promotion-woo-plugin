@@ -26,9 +26,20 @@
         statusText.text(processed + ' / ' + total + '');
     }
 
-    function showMessage(type, text){
+    function escapeHtml(value){
+        return $('<div>').text(value).html();
+    }
+
+    function showMessage(type, text, debug){
         const cssClass = type === 'success' ? 'notice notice-success' : 'notice notice-error';
-        messageBox.html('<div class="' + cssClass + '"><p>' + text + '</p></div>');
+        let content = '<div class="' + cssClass + '"><p>' + escapeHtml(text) + '</p>';
+
+        if(debug){
+            content += '<pre class="itcp-debug">' + escapeHtml(debug) + '</pre>';
+        }
+
+        content += '</div>';
+        messageBox.html(content);
     }
 
     function toggleActionFields(action){
@@ -52,7 +63,7 @@
         }).done(function(response){
             if(!response.success){
                 setLoading(false);
-                showMessage('error', response.data && response.data.message ? response.data.message : settings.i18n.error);
+                showMessage('error', response.data && response.data.message ? response.data.message : settings.i18n.error, response.data && response.data.debug ? response.data.debug : '');
                 return;
             }
 

@@ -89,6 +89,10 @@ msgstr "Inicialização da promoção concluída. Iniciando processamento em lot
 msgid "No queue found. Please restart the process."
 msgstr "Nenhuma fila encontrada. Por favor, reinicie o processo."
 
+#: includes/Processors/PromotionProcessor.php:106
+msgid "An unexpected error occurred while processing products. Please try again."
+msgstr "Ocorreu um erro inesperado ao processar os produtos. Por favor, tente novamente."
+
 #: includes/Processors/PromotionProcessor.php:117
 msgid "All products have been updated."
 msgstr "Todos os produtos foram atualizados."
