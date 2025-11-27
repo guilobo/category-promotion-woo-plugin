@@ -45,6 +45,24 @@ class PromotionService {
     }
 
     /**
+     * Remove promotion from a product.
+     *
+     * @param int $product_id Product ID.
+     */
+    public function remove_promotion( $product_id ) {
+        $product = wc_get_product( $product_id );
+
+        if ( ! $product ) {
+            return;
+        }
+
+        $product->set_sale_price( '' );
+        $product->set_date_on_sale_from( null );
+        $product->set_date_on_sale_to( null );
+        $product->save();
+    }
+
+    /**
      * Parse date string to timestamp.
      *
      * @param string $date_string Date string.
@@ -57,16 +75,18 @@ class PromotionService {
             return null;
         }
 
-        $time = strtotime( $date_string );
+        $datetime = wc_string_to_datetime( $date_string );
 
-        if ( false === $time ) {
+        if ( is_wp_error( $datetime ) || null === $datetime ) {
             return null;
         }
 
         if ( $end_of_day ) {
-            $time = strtotime( '23:59:59', $time );
+            $datetime->set_time( 23, 59, 59 );
+        } else {
+            $datetime->set_time( 0, 0, 0 );
         }
 
-        return $time;
+        return $datetime;
     }
 }

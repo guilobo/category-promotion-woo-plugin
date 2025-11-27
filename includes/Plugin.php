@@ -54,7 +54,27 @@ class Plugin {
      * Load plugin text domain.
      */
     private function load_textdomain() {
-        load_plugin_textdomain( 'indoortech-category-promotions', false, dirname( plugin_basename( INDOORTECH_CP_PATH . 'category-promotions-for-woocommerce.php' ) ) . '/languages' );
+        $domain         = 'indoortech-category-promotions';
+        $locale         = determine_locale();
+        $languages_path = trailingslashit( INDOORTECH_CP_PATH . 'languages' );
+
+        $po_file = $languages_path . sprintf( '%1$s-%2$s.po', $domain, $locale );
+
+        if ( ! file_exists( $po_file ) ) {
+            $locale = apply_filters( 'plugin_locale', $locale, $domain );
+            $po_file = $languages_path . sprintf( '%1$s-%2$s.po', $domain, $locale );
+        }
+
+        if ( file_exists( $po_file ) && class_exists( '\Translations' ) ) {
+            $translations = \Translations::from_po_file( $po_file );
+
+            if ( $translations ) {
+                $GLOBALS['l10n'][ $domain ] = $translations;
+                return;
+            }
+        }
+
+        load_plugin_textdomain( $domain, false, dirname( plugin_basename( INDOORTECH_CP_PATH . 'category-promotions-for-woocommerce.php' ) ) . '/languages' );
     }
 
     /**

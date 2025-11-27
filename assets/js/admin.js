@@ -6,6 +6,10 @@
     const progressText = progressBar.find('.itcp-progress-text');
     const statusText = $('#itcp-status');
     const messageBox = $('#itcp-message');
+    const actionRadios = $('input[name="itcp-action"]');
+    const discountInput = $('#itcp-discount');
+    const startInput = $('#itcp-start-date');
+    const endInput = $('#itcp-end-date');
 
     function setLoading(isLoading){
         form.find('input, select, button').prop('disabled', isLoading);
@@ -25,6 +29,20 @@
     function showMessage(type, text){
         const cssClass = type === 'success' ? 'notice notice-success' : 'notice notice-error';
         messageBox.html('<div class="' + cssClass + '"><p>' + text + '</p></div>');
+    }
+
+    function toggleActionFields(action){
+        const isRemove = action === 'remove';
+
+        discountInput.prop('disabled', isRemove).prop('required', !isRemove);
+        startInput.prop('disabled', isRemove).prop('required', !isRemove);
+        endInput.prop('disabled', isRemove).prop('required', !isRemove);
+
+        if(isRemove){
+            discountInput.val('');
+            startInput.val('');
+            endInput.val('');
+        }
     }
 
     function processBatch(){
@@ -64,7 +82,8 @@
             categories: $('#itcp-categories').val(),
             discount: $('#itcp-discount').val(),
             start_date: $('#itcp-start-date').val(),
-            end_date: $('#itcp-end-date').val()
+            end_date: $('#itcp-end-date').val(),
+            action_type: $('input[name="itcp-action"]:checked').val()
         }).done(function(response){
             if(!response.success){
                 setLoading(false);
@@ -78,4 +97,10 @@
             showMessage('error', settings.i18n.error);
         });
     });
+
+    actionRadios.on('change', function(){
+        toggleActionFields($(this).val());
+    });
+
+    toggleActionFields(actionRadios.filter(':checked').val());
 })(jQuery);

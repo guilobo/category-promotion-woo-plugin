@@ -43,8 +43,17 @@ class PromotionProcessor {
         $discount   = isset( $_POST['discount'] ) ? floatval( wp_unslash( $_POST['discount'] ) ) : 0;
         $start_date = isset( $_POST['start_date'] ) ? sanitize_text_field( wp_unslash( $_POST['start_date'] ) ) : '';
         $end_date   = isset( $_POST['end_date'] ) ? sanitize_text_field( wp_unslash( $_POST['end_date'] ) ) : '';
+        $action     = isset( $_POST['action_type'] ) ? sanitize_key( wp_unslash( $_POST['action_type'] ) ) : 'apply';
 
-        if ( empty( $categories ) || $discount <= 0 || $discount >= 100 || empty( $start_date ) || empty( $end_date ) ) {
+        if ( ! in_array( $action, array( 'apply', 'remove' ), true ) ) {
+            wp_send_json_error( array( 'message' => __( 'Invalid parameters.', 'indoortech-category-promotions' ) ), 400 );
+        }
+
+        if ( empty( $categories ) ) {
+            wp_send_json_error( array( 'message' => __( 'Invalid parameters.', 'indoortech-category-promotions' ) ), 400 );
+        }
+
+        if ( 'apply' === $action && ( $discount <= 0 || $discount >= 100 || empty( $start_date ) || empty( $end_date ) ) ) {
             wp_send_json_error( array( 'message' => __( 'Invalid parameters.', 'indoortech-category-promotions' ) ), 400 );
         }
 
@@ -59,6 +68,7 @@ class PromotionProcessor {
             'discount'    => $discount,
             'start_date'  => $start_date,
             'end_date'    => $end_date,
+            'action'      => $action,
             'processed'   => 0,
             'total'       => count( $product_ids ),
         );
@@ -92,9 +102,14 @@ class PromotionProcessor {
 
         $service     = new PromotionService();
         $product_ids = array_splice( $queue['product_ids'], 0, self::BATCH_SIZE );
+        $action      = isset( $queue['action'] ) ? $queue['action'] : 'apply';
 
         foreach ( $product_ids as $product_id ) {
-            $service->apply_promotion( $product_id, $queue['discount'], $queue['start_date'], $queue['end_date'] );
+            if ( 'remove' === $action ) {
+                $service->remove_promotion( $product_id );
+            } else {
+                $service->apply_promotion( $product_id, $queue['discount'], $queue['start_date'], $queue['end_date'] );
+            }
             $queue['processed']++;
         }
 

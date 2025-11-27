@@ -53,13 +53,16 @@ class AdminPage {
         $end_label      = __( 'End Date', 'indoortech-category-promotions' );
         $discount_label = __( 'Discount Percentage', 'indoortech-category-promotions' );
         $button_label   = __( 'Create Promotion', 'indoortech-category-promotions' );
+        $action_label   = __( 'Action', 'indoortech-category-promotions' );
+        $apply_label    = __( 'Apply promotion', 'indoortech-category-promotions' );
+        $remove_label   = __( 'Remove promotions', 'indoortech-category-promotions' );
 
         $data = array(
             'ajax_url'   => admin_url( 'admin-ajax.php' ),
             'nonce'      => wp_create_nonce( PromotionProcessor::NONCE_ACTION ),
             'i18n'       => array(
                 'processing' => __( 'Processing products, please do not close this window.', 'indoortech-category-promotions' ),
-                'success'    => __( 'Promotion applied successfully to all selected products.', 'indoortech-category-promotions' ),
+                'success'    => __( 'Promotion action completed successfully for all selected products.', 'indoortech-category-promotions' ),
                 'error'      => __( 'An error occurred while applying the promotion. Please try again.', 'indoortech-category-promotions' ),
             ),
             'batch_size' => PromotionProcessor::BATCH_SIZE,
@@ -71,6 +74,15 @@ class AdminPage {
             <h1><?php echo esc_html__( 'Category Promotions', 'indoortech-category-promotions' ); ?></h1>
             <form id="indoortech-category-promotions-form">
                 <table class="form-table">
+                    <tr>
+                        <th scope="row"><span class="itcp-field-label"><?php echo esc_html( $action_label ); ?></span></th>
+                        <td>
+                            <fieldset>
+                                <label><input type="radio" name="itcp-action" value="apply" checked /> <?php echo esc_html( $apply_label ); ?></label><br />
+                                <label><input type="radio" name="itcp-action" value="remove" /> <?php echo esc_html( $remove_label ); ?></label>
+                            </fieldset>
+                        </td>
+                    </tr>
                     <tr>
                         <th scope="row"><label for="itcp-categories"><?php esc_html_e( 'Select Categories', 'indoortech-category-promotions' ); ?></label></th>
                         <td>
