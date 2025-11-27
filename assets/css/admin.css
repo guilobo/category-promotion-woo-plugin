@@ -1,0 +1,23 @@
+.indoortech-category-promotions .itcp-progress {
+    background: #f1f1f1;
+    border: 1px solid #dcdcdc;
+    border-radius: 3px;
+    overflow: hidden;
+    height: 24px;
+    max-width: 400px;
+}
+
+.indoortech-category-promotions .itcp-progress-bar {
+    background: #0073aa;
+    height: 100%;
+    width: 0;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: width 0.3s ease;
+}
+
+.indoortech-category-promotions .itcp-progress-text {
+    font-weight: 600;
+}
