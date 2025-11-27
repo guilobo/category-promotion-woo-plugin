@@ -97,10 +97,20 @@ class PromotionService {
             return null;
         }
 
-        if ( $end_of_day ) {
-            $datetime->set_time( 23, 59, 59 );
-        } else {
-            $datetime->set_time( 0, 0, 0 );
+        $set_time_method = null;
+
+        if ( method_exists( $datetime, 'set_time' ) ) {
+            $set_time_method = 'set_time';
+        } elseif ( method_exists( $datetime, 'setTime' ) ) {
+            $set_time_method = 'setTime';
+        }
+
+        if ( $set_time_method ) {
+            if ( $end_of_day ) {
+                $datetime->$set_time_method( 23, 59, 59 );
+            } else {
+                $datetime->$set_time_method( 0, 0, 0 );
+            }
         }
 
         return $datetime;
